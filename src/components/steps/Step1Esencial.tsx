@@ -16,7 +16,20 @@ interface BigInputProps {
   hint?: string
 }
 
+function formatWithSeparators(value: number | string): string {
+  const str = String(value).replace(/\D/g, '')
+  if (!str) return ''
+  return str.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
 function BigInput({ label, value, onChange, prefix = '$', hint }: BigInputProps) {
+  const displayValue = formatWithSeparators(value)
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/\./g, '')
+    onChange(raw)
+  }
+
   return (
     <div>
       <label className="block text-sm font-semibold text-slate-700 mb-1.5">{label}</label>
@@ -25,9 +38,10 @@ function BigInput({ label, value, onChange, prefix = '$', hint }: BigInputProps)
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">{prefix}</span>
         )}
         <input
-          type="number"
-          value={value}
-          onChange={e => onChange(e.target.value)}
+          type="text"
+          inputMode="numeric"
+          value={displayValue}
+          onChange={handleChange}
           className={`w-full border-2 border-slate-200 rounded-xl py-3.5 text-lg font-semibold text-slate-900 focus:outline-none focus:border-green-500 transition-colors ${prefix ? 'pl-8 pr-4' : 'px-4'}`}
           placeholder="0"
         />
@@ -129,9 +143,14 @@ export default function Step1Esencial({ data, onChange }: Props) {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-slate-500">Custom $</span>
                   <input
-                    type="number"
-                    value={data.down_custom}
-                    onChange={e => { onChange('down_custom', e.target.value); onChange('down_pct', 0) }}
+                    type="text"
+                    inputMode="numeric"
+                    value={formatWithSeparators(data.down_custom)}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/\./g, '')
+                      onChange('down_custom', raw)
+                      onChange('down_pct', 0)
+                    }}
                     placeholder="Monto"
                     className="w-32 border-2 border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
                   />

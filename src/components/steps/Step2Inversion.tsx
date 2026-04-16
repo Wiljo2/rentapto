@@ -14,7 +14,15 @@ interface CostRowProps {
   onPctChange?: (value: string) => void
 }
 
+function formatWithSeparators(value: number | string): string {
+  const str = String(value).replace(/\D/g, '')
+  if (!str) return ''
+  return str.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
 function CostRow({ label, hint, auto, value, onChange, pct, onPctChange }: CostRowProps) {
+  const displayValue = formatWithSeparators(value)
+
   return (
     <div className="flex items-center gap-3 py-3 border-b border-slate-100 last:border-0">
       <div className="flex-1 min-w-0">
@@ -37,10 +45,14 @@ function CostRow({ label, hint, auto, value, onChange, pct, onPctChange }: CostR
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span>
           <input
-            type="number"
-            value={value}
-            onChange={e => onChange(e.target.value)}
-            placeholder={auto > 0 ? String(auto) : '0'}
+            type="text"
+            inputMode="numeric"
+            value={displayValue}
+            onChange={e => {
+              const raw = e.target.value.replace(/\./g, '')
+              onChange(raw)
+            }}
+            placeholder={auto > 0 ? formatWithSeparators(auto) : '0'}
             className="w-full pl-6 pr-2 border-2 border-slate-200 rounded-lg py-1.5 text-sm text-right focus:outline-none focus:border-green-500"
           />
         </div>

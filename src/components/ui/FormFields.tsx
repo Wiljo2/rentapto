@@ -65,15 +65,29 @@ interface MoneyInputProps {
   className?: string
 }
 
+function formatWithSeparators(value: number | string): string {
+  const str = String(value).replace(/\D/g, '')
+  if (!str) return ''
+  return str.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
 /** Currency input with leading $ sign, right-aligned — used in cost tables. */
 export function MoneyInput({ value, onChange, placeholder = '0', className = '' }: MoneyInputProps) {
+  const displayValue = formatWithSeparators(value)
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/\./g, '')
+    onChange(raw)
+  }
+
   return (
     <div className={`relative w-40 ${className}`}>
       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span>
       <input
-        type="number"
-        value={value}
-        onChange={e => onChange(e.target.value)}
+        type="text"
+        inputMode="numeric"
+        value={displayValue}
+        onChange={handleChange}
         placeholder={placeholder}
         className="w-full pl-6 pr-2 border-2 border-slate-200 rounded-lg py-1.5 text-sm text-right focus:outline-none focus:border-green-500"
       />
