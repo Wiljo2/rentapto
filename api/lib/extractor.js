@@ -17,6 +17,7 @@ Esquema exacto a devolver:
   "name": "nombre o referencia corta del apartamento si se menciona (string | null)",
   "neighborhood": "barrio o sector en Cali, Colombia (string | null)",
   "address": "dirección completa si se menciona (string | null)",
+  "estrato": "estrato socioeconómico 1-6 como entero (number | null)",
   "floor": "número de piso como entero (number | null)",
   "type": "uno de exactamente: Apartamento, Estudio, Penthouse, Dúplex (string | null)",
   "area": "área en metros cuadrados como número (number | null)",
@@ -28,6 +29,10 @@ Esquema exacto a devolver:
   "sun_exposure": "uno de exactamente: Alta, Media, Baja — o null (string | null)",
   "amenities": "array con los que apliquen de esta lista: Piscina, Gimnasio, Sauna, BBQ, Rooftop, Portería 24h, Ascensor, Depósito, Pet friendly, Smart home. Usar [] si ninguno aplica (array)",
   "price": "precio de venta en COP como entero (number | null)",
+  "rent": "canon de arriendo mensual en COP si se menciona (number | null)",
+  "admin": "cuota de administración mensual en COP si se menciona (number | null)",
+  "notes": "información adicional relevante no capturada en otros campos (string | null)"
+}`
   "rent": "canon de arriendo mensual en COP si se menciona (number | null)",
   "admin": "cuota de administración mensual en COP si se menciona (number | null)",
   "notes": "información adicional relevante no capturada en otros campos (string | null)"

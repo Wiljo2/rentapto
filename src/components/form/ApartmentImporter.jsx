@@ -5,6 +5,7 @@ const FIELD_LABELS = {
   name: 'Nombre',
   neighborhood: 'Barrio',
   address: 'Dirección',
+  estrato: 'Estrato',
   floor: 'Piso',
   type: 'Tipo',
   area: 'Área (m²)',

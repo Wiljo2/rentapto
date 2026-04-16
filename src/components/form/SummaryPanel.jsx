@@ -1,43 +1,56 @@
-import { formatCOP, formatPct, computeIndicators } from '../../lib/calculations'
+import {
+  computeIndicators, formatCOP, formatCompact, formatPct,
+} from '../../lib/calculations'
 
-const StatBox = ({ label, value, highlight }) => (
-  <div className={`rounded-xl p-4 ${highlight ? 'bg-green-600 text-white' : 'bg-white border border-slate-200'}`}>
-    <p className={`text-xs font-medium mb-1 ${highlight ? 'text-green-100' : 'text-slate-500'}`}>{label}</p>
-    <p className={`text-lg font-bold ${highlight ? 'text-white' : 'text-slate-900'}`}>{value}</p>
-  </div>
-)
+const badgeColors = {
+  green:  'bg-green-100 text-green-800 border-green-300',
+  yellow: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+  red:    'bg-red-100 text-red-800 border-red-300',
+}
+
+function Stat({ label, value, sub, green, red }) {
+  return (
+    <div className="flex flex-col">
+      <span className="text-xs text-slate-400 font-medium mb-0.5">{label}</span>
+      <span className={`text-base font-bold ${green ? 'text-green-700' : red ? 'text-red-600' : 'text-slate-900'}`}>
+        {value}
+      </span>
+      {sub && <span className="text-xs text-slate-400">{sub}</span>}
+    </div>
+  )
+}
 
 export default function SummaryPanel({ data }) {
   const ind = computeIndicators(data)
-  const { grossYield, netYield, netCashFlow, badge, totalInversion, capRate, pricePerM2 } = ind
+  const { grossYield, netYield, netCashFlow, efectivoRequerido, quota, badge } = ind
 
-  const badgeColor = badge.color === 'green'
-    ? 'bg-green-100 text-green-800 border-green-300'
-    : badge.color === 'yellow'
-    ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
-    : 'bg-red-100 text-red-800 border-red-300'
+  if (!data.price) return null
 
   return (
-    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Resumen en tiempo real</h3>
-        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold border ${badgeColor}`}>
+    <div className={`border-2 rounded-2xl p-4 mb-6 ${
+      badge.color === 'green' ? 'bg-green-50 border-green-200'
+      : badge.color === 'yellow' ? 'bg-yellow-50 border-yellow-200'
+      : 'bg-red-50 border-red-200'
+    }`}>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Resumen en vivo</span>
+        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold border ${badgeColors[badge.color]}`}>
           {badge.label}
         </span>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <StatBox label="Precio comercial" value={formatCOP(data.price)} />
-        <StatBox label="Rentab. bruta" value={formatPct(grossYield)} highlight={badge.color === 'green'} />
-        <StatBox label="Rentab. neta" value={formatPct(netYield)} />
-        <StatBox label="Flujo neto/mes" value={formatCOP(netCashFlow)} />
-        <StatBox label="Cap Rate" value={formatPct(capRate)} />
-        <StatBox label="Precio/m²" value={formatCOP(pricePerM2)} />
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+        <Stat label="Precio" value={formatCompact(data.price)} />
+        <Stat label="Cuota mensual" value={formatCOP(quota)} />
+        <Stat label="Rent. bruta" value={formatPct(grossYield)}
+          green={grossYield >= 7} red={grossYield > 0 && grossYield < 5} />
+        <Stat label="Rent. neta" value={formatPct(netYield)} />
+        <Stat
+          label="Flujo neto/mes"
+          value={formatCOP(netCashFlow)}
+          green={netCashFlow > 0} red={netCashFlow < 0}
+        />
+        <Stat label="Efectivo requerido" value={formatCompact(efectivoRequerido)} sub="cuota inicial + gastos" />
       </div>
-      {totalInversion > 0 && (
-        <p className="text-xs text-slate-500 mt-3">
-          Total inversión (precio + gastos compra): <strong>{formatCOP(totalInversion)}</strong>
-        </p>
-      )}
     </div>
   )
 }
