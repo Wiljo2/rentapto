@@ -102,6 +102,9 @@ export interface Indicators {
   loan: number
   quota: number
   seguros: number
+  avaluo: number
+  titulos: number
+  escrituracion: number
   efectivoRequerido: number
   totalInversion: number
   totalCosts: number

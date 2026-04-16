@@ -211,6 +211,12 @@ export function computeIndicators(apt: ApartmentInput): Indicators {
   const downAmount = calcDownAmount(price, apt.down_pct, apt.down_custom)
   const loan = calcLoan(price, downAmount)
   const quota = calcQuota(loan, apt.rate, apt.term)
+
+  // Calculate individual costs with fallback logic
+  const avaluo = Number(apt.gasto_avaluo) || calcAvaluo(price)
+  const titulos = Number(apt.gasto_titulos) || calcTitulos(price)
+  const escrituracion = Number(apt.escrituracion_override) || calcEscrituracion(price, apt.escrituracion_pct)
+
   const efectivoRequerido = calcEfectivoRequerido(apt)
   const totalInversion = calcTotalInversion(apt)
   const totalCosts = calcTotalCosts({ ...apt, quota: apt.quota || quota } as ApartmentFormData)
@@ -229,6 +235,9 @@ export function computeIndicators(apt: ApartmentInput): Indicators {
     loan,
     quota,
     seguros,
+    avaluo,
+    titulos,
+    escrituracion,
     efectivoRequerido,
     totalInversion,
     totalCosts,

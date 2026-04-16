@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ApartmentRow } from '../../types'
-import {
-  formatCOP, formatPct, formatCompact,
-  calcAvaluo, calcTitulos, calcEscrituracion, calcDownAmount, calcLoan, calcQuota,
-} from '../../lib/calculations'
+import { formatCOP, formatPct, formatCompact } from '../../lib/calculations'
 import { useComputedIndicators } from '../../hooks/useComputedIndicators'
 import YieldBadge from '../ui/YieldBadge'
 
@@ -50,13 +47,11 @@ export default function ApartmentDetail({ apt, onDelete }: Props) {
   const navigate = useNavigate()
   const [mode, setMode] = useState<'min' | 'full'>('min')
   const ind = useComputedIndicators(apt)
-  const { grossYield, netYield, netCashFlow, pricePerM2, downAmount, loan, efectivoRequerido, totalInversion, capRate, totalCosts, projected, seguros } = ind
-
-  const price = Number(apt.price) || 0
-  const quota = calcQuota(loan, apt.rate, apt.term)
-  const avaluo = Number(apt.gasto_avaluo) || calcAvaluo(price)
-  const titulos = Number(apt.gasto_titulos) || calcTitulos(price)
-  const escrituracion = Number(apt.escrituracion_override) || calcEscrituracion(price, apt.escrituracion_pct)
+  const {
+    grossYield, netYield, netCashFlow, pricePerM2, downAmount, loan,
+    efectivoRequerido, totalInversion, capRate, totalCosts, projected, seguros,
+    quota, avaluo, titulos, escrituracion
+  } = ind
 
   return (
     <div className="max-w-2xl mx-auto">
