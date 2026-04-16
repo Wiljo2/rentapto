@@ -1,15 +1,21 @@
 import { useNavigate } from 'react-router-dom'
-import { formatCOP, formatCompact, formatPct, computeIndicators } from '../../lib/calculations'
+import type { ApartmentRow } from '../../types'
+import { formatCOP, formatCompact, formatPct } from '../../lib/calculations'
+import { useComputedIndicators } from '../../hooks/useComputedIndicators'
 import YieldBadge from '../ui/YieldBadge'
 
-export default function ApartmentCard({ apt, onDelete }) {
+interface Props {
+  apt: ApartmentRow
+  onDelete: (id: string) => void
+}
+
+export default function ApartmentCard({ apt, onDelete }: Props) {
   const navigate = useNavigate()
-  const ind = computeIndicators(apt)
+  const ind = useComputedIndicators(apt)
   const { grossYield, netYield, netCashFlow, efectivoRequerido } = ind
 
   return (
     <div className="bg-white rounded-2xl border-2 border-slate-200 p-5 hover:shadow-md hover:border-slate-300 transition-all">
-      {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-slate-900 truncate">{apt.name || 'Sin nombre'}</h3>
@@ -23,7 +29,6 @@ export default function ApartmentCard({ apt, onDelete }) {
         <YieldBadge grossYield={grossYield} />
       </div>
 
-      {/* Metrics */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         <div className="bg-slate-50 rounded-xl p-3">
           <p className="text-xs text-slate-400 mb-0.5">Precio</p>
@@ -45,14 +50,12 @@ export default function ApartmentCard({ apt, onDelete }) {
         </div>
       </div>
 
-      {/* Efectivo requerido */}
       {efectivoRequerido > 0 && (
         <p className="text-xs text-slate-400 mb-3 text-center">
           Efectivo requerido: <strong className="text-slate-600">{formatCompact(efectivoRequerido)}</strong>
         </p>
       )}
 
-      {/* Actions */}
       <div className="flex gap-2">
         <button
           onClick={() => navigate(`/apartment/${apt.id}`)}

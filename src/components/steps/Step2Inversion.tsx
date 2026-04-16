@@ -1,9 +1,20 @@
+import type { ApartmentFormData } from '../../types'
 import {
   calcDownAmount, calcLoan, calcAvaluo, calcTitulos,
   calcEscrituracion, calcEfectivoRequerido, formatCOP, formatPct,
 } from '../../lib/calculations'
 
-function CostRow({ label, hint, auto, value, onChange, pct, onPctChange }) {
+interface CostRowProps {
+  label: string
+  hint?: string
+  auto: number
+  value: number | string
+  onChange: (value: string) => void
+  pct?: number | string
+  onPctChange?: (value: string) => void
+}
+
+function CostRow({ label, hint, auto, value, onChange, pct, onPctChange }: CostRowProps) {
   return (
     <div className="flex items-center gap-3 py-3 border-b border-slate-100 last:border-0">
       <div className="flex-1 min-w-0">
@@ -15,7 +26,7 @@ function CostRow({ label, hint, auto, value, onChange, pct, onPctChange }) {
           <input
             type="number"
             value={pct}
-            onChange={e => onPctChange(e.target.value)}
+            onChange={e => onPctChange?.(e.target.value)}
             step="0.01"
             className="w-full border-2 border-slate-200 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:border-green-500"
           />
@@ -41,7 +52,12 @@ function CostRow({ label, hint, auto, value, onChange, pct, onPctChange }) {
   )
 }
 
-export default function Step2Inversion({ data, onChange }) {
+interface Props {
+  data: ApartmentFormData
+  onChange: (field: keyof ApartmentFormData, value: unknown) => void
+}
+
+export default function Step2Inversion({ data, onChange }: Props) {
   const price = Number(data.price) || 0
   const downAmount = calcDownAmount(price, data.down_pct, data.down_custom)
   const loan = calcLoan(price, downAmount)
@@ -61,14 +77,12 @@ export default function Step2Inversion({ data, onChange }) {
       </div>
 
       <div className="bg-white border-2 border-slate-200 rounded-2xl overflow-hidden">
-        {/* Header */}
         <div className="bg-slate-50 px-5 py-3 flex justify-between text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-200">
           <span>Concepto</span>
           <span>Valor</span>
         </div>
 
         <div className="px-5">
-          {/* Cuota inicial - read only */}
           <div className="flex items-center justify-between py-3 border-b border-slate-100">
             <div>
               <p className="text-sm font-medium text-slate-700">Cuota inicial</p>
@@ -109,7 +123,6 @@ export default function Step2Inversion({ data, onChange }) {
           />
         </div>
 
-        {/* Total */}
         <div className="bg-green-50 border-t-2 border-green-200 px-5 py-4 flex justify-between items-center">
           <div>
             <p className="text-sm font-bold text-green-900">Total efectivo requerido</p>
@@ -119,7 +132,6 @@ export default function Step2Inversion({ data, onChange }) {
         </div>
       </div>
 
-      {/* Context note */}
       <div className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-200">
         <p className="text-xs text-slate-500">
           El préstamo bancario cubre <strong>{formatCOP(loan)}</strong>. El banco financia el inmueble,

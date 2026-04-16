@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { ApartmentFormData } from '../../types'
 import {
   calcDownAmount, calcLoan, calcQuota, calcMonthlyRate,
   formatCOP, formatPct,
@@ -7,7 +8,15 @@ import {
 const DOWN_PCTS = [20, 25, 30]
 const LOAN_TYPES = ['Hipotecario (Pesos)', 'Leasing', 'Otro']
 
-function BigInput({ label, value, onChange, prefix = '$', hint }) {
+interface BigInputProps {
+  label: string
+  value: number | string
+  onChange: (value: string) => void
+  prefix?: string
+  hint?: string
+}
+
+function BigInput({ label, value, onChange, prefix = '$', hint }: BigInputProps) {
   return (
     <div>
       <label className="block text-sm font-semibold text-slate-700 mb-1.5">{label}</label>
@@ -28,7 +37,12 @@ function BigInput({ label, value, onChange, prefix = '$', hint }) {
   )
 }
 
-export default function Step1Esencial({ data, onChange }) {
+interface Props {
+  data: ApartmentFormData
+  onChange: (field: keyof ApartmentFormData, value: unknown) => void
+}
+
+export default function Step1Esencial({ data, onChange }: Props) {
   const [mortgageOpen, setMortgageOpen] = useState(false)
 
   const price = Number(data.price) || 0
@@ -37,14 +51,13 @@ export default function Step1Esencial({ data, onChange }) {
   const rm = data.rate ? calcMonthlyRate(Number(data.rate)) : null
   const quota = calcQuota(loan, data.rate, data.term)
 
-  function handleDownPct(pct) {
+  function handleDownPct(pct: number) {
     onChange('down_pct', pct)
     onChange('down_custom', '')
   }
 
   return (
     <div className="space-y-6">
-      {/* Name */}
       <div>
         <label className="block text-sm font-semibold text-slate-700 mb-1.5">
           Nombre / Referencia
@@ -58,7 +71,6 @@ export default function Step1Esencial({ data, onChange }) {
         />
       </div>
 
-      {/* Key financial inputs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <BigInput
           label="Precio del inmueble"
@@ -78,7 +90,6 @@ export default function Step1Esencial({ data, onChange }) {
         />
       </div>
 
-      {/* Mortgage collapsible */}
       <div className="border-2 border-slate-200 rounded-xl overflow-hidden">
         <button
           type="button"
@@ -98,7 +109,6 @@ export default function Step1Esencial({ data, onChange }) {
 
         {mortgageOpen && (
           <div className="px-5 py-5 space-y-5 border-t border-slate-200">
-            {/* Down payment */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Cuota inicial</label>
               <div className="flex gap-2 flex-wrap mb-3">

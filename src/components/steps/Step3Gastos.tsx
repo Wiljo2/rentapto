@@ -1,48 +1,16 @@
+import type { ApartmentFormData } from '../../types'
 import {
   calcDownAmount, calcLoan, calcQuota, calcSeguros,
   calcTotalCosts, calcNetCashFlow, formatCOP, formatPct,
 } from '../../lib/calculations'
+import { MoneyInput } from '../ui/FormFields'
 
-function CostRow({ label, hint, value, onChange, suffix, readOnly, highlight }) {
-  return (
-    <div className={`flex items-center gap-3 py-3 border-b border-slate-100 last:border-0 ${highlight ? 'bg-green-50 -mx-5 px-5 rounded' : ''}`}>
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium ${highlight ? 'text-green-800' : 'text-slate-700'}`}>{label}</p>
-        {hint && <p className="text-xs text-slate-400">{hint}</p>}
-      </div>
-      {readOnly ? (
-        <p className="text-sm font-bold text-slate-900">{formatCOP(value)}</p>
-      ) : (
-        <div className="flex items-center gap-2">
-          {suffix && (
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                value={suffix.value}
-                onChange={e => suffix.onChange(e.target.value)}
-                step="0.01"
-                className="w-16 border-2 border-slate-200 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:border-green-500"
-              />
-              <span className="text-xs text-slate-400">%</span>
-            </div>
-          )}
-          <div className="relative w-40">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span>
-            <input
-              type="number"
-              value={value}
-              onChange={e => onChange(e.target.value)}
-              placeholder="0"
-              className="w-full pl-6 pr-2 border-2 border-slate-200 rounded-lg py-1.5 text-sm text-right focus:outline-none focus:border-green-500"
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  )
+interface Props {
+  data: ApartmentFormData
+  onChange: (field: keyof ApartmentFormData, value: unknown) => void
 }
 
-export default function Step3Gastos({ data, onChange }) {
+export default function Step3Gastos({ data, onChange }: Props) {
   const price = Number(data.price) || 0
   const downAmount = calcDownAmount(price, data.down_pct, data.down_custom)
   const loan = calcLoan(price, downAmount)
@@ -97,21 +65,12 @@ export default function Step3Gastos({ data, onChange }) {
             </div>
           </div>
 
-          {/* Admin - from step 1 editable */}
+          {/* Admin */}
           <div className="flex items-center gap-3 py-3 border-b border-slate-100">
             <div className="flex-1">
               <p className="text-sm font-medium text-slate-700">Administración</p>
             </div>
-            <div className="relative w-40">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span>
-              <input
-                type="number"
-                value={data.admin}
-                onChange={e => onChange('admin', e.target.value)}
-                placeholder="0"
-                className="w-full pl-6 pr-2 border-2 border-slate-200 rounded-lg py-1.5 text-sm text-right focus:outline-none focus:border-green-500"
-              />
-            </div>
+            <MoneyInput value={data.admin} onChange={v => onChange('admin', v)} />
           </div>
 
           {/* Predial */}
@@ -120,16 +79,7 @@ export default function Step3Gastos({ data, onChange }) {
               <p className="text-sm font-medium text-slate-700">Impuesto predial</p>
               <p className="text-xs text-slate-400">Valor mensual (predial anual ÷ 12)</p>
             </div>
-            <div className="relative w-40">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span>
-              <input
-                type="number"
-                value={data.tax}
-                onChange={e => onChange('tax', e.target.value)}
-                placeholder="0"
-                className="w-full pl-6 pr-2 border-2 border-slate-200 rounded-lg py-1.5 text-sm text-right focus:outline-none focus:border-green-500"
-              />
-            </div>
+            <MoneyInput value={data.tax} onChange={v => onChange('tax', v)} />
           </div>
 
           {/* Otros */}
@@ -137,26 +87,15 @@ export default function Step3Gastos({ data, onChange }) {
             <div className="flex-1">
               <p className="text-sm font-medium text-slate-700">Otros</p>
             </div>
-            <div className="relative w-40">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span>
-              <input
-                type="number"
-                value={data.other_costs}
-                onChange={e => onChange('other_costs', e.target.value)}
-                placeholder="0"
-                className="w-full pl-6 pr-2 border-2 border-slate-200 rounded-lg py-1.5 text-sm text-right focus:outline-none focus:border-green-500"
-              />
-            </div>
+            <MoneyInput value={data.other_costs} onChange={v => onChange('other_costs', v)} />
           </div>
         </div>
 
-        {/* Total costs */}
         <div className="border-t-2 border-slate-200 px-5 py-3 flex justify-between items-center bg-slate-50">
           <p className="text-sm font-semibold text-slate-700">Total gastos / mes</p>
           <p className="text-base font-bold text-slate-900">{formatCOP(totalCosts)}</p>
         </div>
 
-        {/* Net cash flow */}
         <div className={`px-5 py-4 flex justify-between items-center ${cashFlow >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
           <div>
             <p className={`text-sm font-bold ${cashFlow >= 0 ? 'text-green-900' : 'text-red-900'}`}>
@@ -172,7 +111,6 @@ export default function Step3Gastos({ data, onChange }) {
         </div>
       </div>
 
-      {/* Projection settings */}
       <div className="border-2 border-slate-200 rounded-2xl p-5">
         <p className="text-sm font-semibold text-slate-700 mb-4">Proyección con IPC</p>
         <div className="grid grid-cols-2 gap-4">

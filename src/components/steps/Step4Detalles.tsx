@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import type { ApartmentFormData } from '../../types'
+import { Field, TextInput, NumInput } from '../ui/FormFields'
 
 const TYPES = ['Apartamento', 'Estudio', 'Penthouse', 'Dúplex']
 const VIEWS = ['', 'Ciudad', 'Mar', 'Montaña', 'Parque', 'Interior', 'Otro']
@@ -9,44 +11,15 @@ const AMENITIES = [
 ]
 const ESTRATOS = [1, 2, 3, 4, 5, 6]
 
-function Field({ label, hint, children }) {
-  return (
-    <div>
-      <label className="block text-sm font-semibold text-slate-700 mb-1.5">{label}</label>
-      {children}
-      {hint && <p className="text-xs text-slate-400 mt-1">{hint}</p>}
-    </div>
-  )
+interface Props {
+  data: ApartmentFormData
+  onChange: (field: keyof ApartmentFormData, value: unknown) => void
 }
 
-function TextInput({ value, onChange, placeholder }) {
-  return (
-    <input
-      type="text"
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-500 transition-colors"
-    />
-  )
-}
-
-function NumInput({ value, onChange, placeholder }) {
-  return (
-    <input
-      type="number"
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-500 transition-colors"
-    />
-  )
-}
-
-export default function Step4Detalles({ data, onChange }) {
+export default function Step4Detalles({ data, onChange }: Props) {
   const [newLink, setNewLink] = useState('')
 
-  function toggleAmenity(amenity) {
+  function toggleAmenity(amenity: string) {
     const current = data.amenities || []
     onChange('amenities', current.includes(amenity)
       ? current.filter(a => a !== amenity)
@@ -60,7 +33,7 @@ export default function Step4Detalles({ data, onChange }) {
     setNewLink('')
   }
 
-  function removeLink(idx) {
+  function removeLink(idx: number) {
     onChange('links', (data.links || []).filter((_, i) => i !== idx))
   }
 
@@ -74,10 +47,10 @@ export default function Step4Detalles({ data, onChange }) {
       {/* Location */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Barrio / Sector">
-          <TextInput value={data.neighborhood} onChange={v => onChange('neighborhood', v)} placeholder="Ej: Laureles" />
+          <TextInput value={String(data.neighborhood)} onChange={v => onChange('neighborhood', v)} placeholder="Ej: Laureles" />
         </Field>
         <Field label="Dirección">
-          <TextInput value={data.address} onChange={v => onChange('address', v)} placeholder="Ej: Cra 80 #39-25" />
+          <TextInput value={String(data.address)} onChange={v => onChange('address', v)} placeholder="Ej: Cra 80 #39-25" />
         </Field>
         <Field label="Estrato">
           <div className="flex gap-2">
@@ -106,7 +79,7 @@ export default function Step4Detalles({ data, onChange }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <Field label="Tipo">
           <select
-            value={data.type}
+            value={String(data.type)}
             onChange={e => onChange('type', e.target.value)}
             className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-500"
           >
@@ -130,7 +103,7 @@ export default function Step4Detalles({ data, onChange }) {
         </Field>
         <Field label="Vista">
           <select
-            value={data.view}
+            value={String(data.view)}
             onChange={e => onChange('view', e.target.value)}
             className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-500"
           >
@@ -139,7 +112,7 @@ export default function Step4Detalles({ data, onChange }) {
         </Field>
         <Field label="Exposición solar">
           <select
-            value={data.sun_exposure}
+            value={String(data.sun_exposure)}
             onChange={e => onChange('sun_exposure', e.target.value)}
             className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-500"
           >

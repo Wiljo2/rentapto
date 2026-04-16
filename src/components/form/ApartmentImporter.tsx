@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react'
+import type { ApartmentFormData } from '../../types'
 
 // Fields the extractor can fill, with human-readable labels for the preview
-const FIELD_LABELS = {
+const FIELD_LABELS: Partial<Record<keyof ApartmentFormData, string>> = {
   name: 'Nombre',
   neighborhood: 'Barrio',
   address: 'Dirección',
@@ -22,25 +23,29 @@ const FIELD_LABELS = {
   notes: 'Notas',
 }
 
-function formatPreviewValue(key, value) {
+function formatPreviewValue(key: keyof ApartmentFormData, value: unknown): string | null {
   if (value === null || value === undefined) return null
   if (Array.isArray(value)) return value.length > 0 ? value.join(', ') : null
   if (['price', 'rent', 'admin'].includes(key)) {
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value)
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(Number(value))
   }
   return String(value)
 }
 
-export default function ApartmentImporter({ onApply }) {
+interface Props {
+  onApply: (extracted: Partial<ApartmentFormData>) => void
+}
+
+export default function ApartmentImporter({ onApply }: Props) {
   const [open, setOpen] = useState(false)
-  const [tab, setTab] = useState('text') // 'text' | 'image'
+  const [tab, setTab] = useState<'text' | 'image'>('text')
   const [text, setText] = useState('')
-  const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [extracted, setExtracted] = useState(null)
-  const fileRef = useRef(null)
+  const [error, setError] = useState<string | null>(null)
+  const [extracted, setExtracted] = useState<Partial<ApartmentFormData> | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   function handleClose() {
     setOpen(false)
@@ -52,12 +57,12 @@ export default function ApartmentImporter({ onApply }) {
     setTab('text')
   }
 
-  function handleImageSelect(e) {
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     setImageFile(file)
     const reader = new FileReader()
-    reader.onload = () => setImagePreview(reader.result)
+    reader.onload = () => setImagePreview(reader.result as string)
     reader.readAsDataURL(file)
   }
 
@@ -70,20 +75,19 @@ export default function ApartmentImporter({ onApply }) {
     setExtracted(null)
 
     try {
-      const payload = {}
+      const payload: Record<string, string> = {}
       if (tab === 'text') {
         payload.text = text.trim()
       } else {
-        // Convert image to base64, stripping the data URL prefix
-        const base64 = await new Promise((resolve, reject) => {
+        const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader()
-          reader.onload = () => resolve(reader.result.split(',')[1])
+          reader.onload = () => resolve((reader.result as string).split(',')[1])
           reader.onerror = reject
-          reader.readAsDataURL(imageFile)
+          reader.readAsDataURL(imageFile!)
         })
         payload.imageBase64 = base64
-        payload.mediaType = imageFile.type
-        if (text.trim()) payload.text = text.trim() // optional extra context
+        payload.mediaType = imageFile!.type
+        if (text.trim()) payload.text = text.trim()
       }
 
       const res = await fetch('/api/extract-apartment', {
@@ -94,9 +98,9 @@ export default function ApartmentImporter({ onApply }) {
 
       const json = await res.json()
       if (!res.ok || json.error) throw new Error(json.error || 'Error al extraer información')
-      setExtracted(json)
+      setExtracted(json as Partial<ApartmentFormData>)
     } catch (err) {
-      setError(err.message)
+      setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
       setLoading(false)
     }
@@ -108,9 +112,8 @@ export default function ApartmentImporter({ onApply }) {
     handleClose()
   }
 
-  // Count how many fields were filled
   const filledCount = extracted
-    ? Object.entries(extracted).filter(([k, v]) => {
+    ? Object.entries(extracted).filter(([, v]) => {
         if (Array.isArray(v)) return v.length > 0
         return v !== null && v !== undefined
       }).length
@@ -118,7 +121,6 @@ export default function ApartmentImporter({ onApply }) {
 
   return (
     <>
-      {/* Trigger button */}
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -128,11 +130,9 @@ export default function ApartmentImporter({ onApply }) {
         <span>Importar con IA</span>
       </button>
 
-      {/* Modal overlay */}
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
-            {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
               <div>
                 <h3 className="font-bold text-slate-900">Importar apartamento con IA</h3>
@@ -148,13 +148,11 @@ export default function ApartmentImporter({ onApply }) {
               </button>
             </div>
 
-            {/* Modal body */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
               {!extracted ? (
                 <>
-                  {/* Tab switcher */}
                   <div className="flex rounded-lg bg-slate-100 p-1">
-                    {[['text', '📋 Texto / Descripción'], ['image', '📷 Imagen / Foto']].map(([val, label]) => (
+                    {([['text', '📋 Texto / Descripción'], ['image', '📷 Imagen / Foto']] as const).map(([val, label]) => (
                       <button
                         key={val}
                         type="button"
@@ -185,7 +183,6 @@ export default function ApartmentImporter({ onApply }) {
 
                   {tab === 'image' && (
                     <div className="space-y-3">
-                      {/* Image drop zone */}
                       <div
                         onClick={() => fileRef.current?.click()}
                         className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
@@ -218,7 +215,6 @@ export default function ApartmentImporter({ onApply }) {
                           {imageFile.name} ({(imageFile.size / 1024).toFixed(0)} KB)
                         </p>
                       )}
-                      {/* Optional extra context */}
                       <div>
                         <label className="block text-xs font-medium text-slate-500 mb-1">
                           Contexto adicional (opcional)
@@ -241,7 +237,6 @@ export default function ApartmentImporter({ onApply }) {
                   )}
                 </>
               ) : (
-                /* Extracted preview */
                 <div>
                   <div className="flex items-center gap-2 mb-4">
                     <span className="text-green-600 text-lg">✓</span>
@@ -258,7 +253,7 @@ export default function ApartmentImporter({ onApply }) {
                   </div>
 
                   <div className="space-y-1 bg-slate-50 rounded-xl p-4 border border-slate-200">
-                    {Object.entries(FIELD_LABELS).map(([key, label]) => {
+                    {(Object.entries(FIELD_LABELS) as [keyof ApartmentFormData, string][]).map(([key, label]) => {
                       const display = formatPreviewValue(key, extracted[key])
                       if (!display) return null
                       return (
@@ -275,8 +270,7 @@ export default function ApartmentImporter({ onApply }) {
                     )}
                   </div>
 
-                  {/* Fields not found */}
-                  {Object.entries(FIELD_LABELS).some(([k]) => {
+                  {(Object.keys(FIELD_LABELS) as (keyof ApartmentFormData)[]).some(k => {
                     const v = extracted[k]
                     return Array.isArray(v) ? v.length === 0 : v === null || v === undefined
                   }) && (
@@ -288,7 +282,6 @@ export default function ApartmentImporter({ onApply }) {
               )}
             </div>
 
-            {/* Modal footer */}
             <div className="px-6 py-4 border-t border-slate-200 flex gap-3">
               <button
                 type="button"

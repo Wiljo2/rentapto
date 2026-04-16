@@ -1,43 +1,26 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
 import ApartmentCard from '../components/apartments/ApartmentCard'
 import ApartmentDetail from '../components/apartments/ApartmentDetail'
+import { useApartments } from '../hooks/useApartments'
 
 export default function MyApartments() {
   const navigate = useNavigate()
-  const { id } = useParams() // detail view route: /apartment/:id
-  const [apartments, setApartments] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const { id } = useParams<{ id: string }>()
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchApartments()
-  }, [])
+  const { apartments, loading, error, deleteApartment } = useApartments()
 
-  async function fetchApartments() {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('apartments')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (error) setError(error.message)
-    else setApartments(data || [])
-    setLoading(false)
-  }
-
-  async function handleDelete(aptId) {
+  async function handleDelete(aptId: string) {
     if (deleteConfirm !== aptId) {
       setDeleteConfirm(aptId)
       return
     }
-    const { error } = await supabase.from('apartments').delete().eq('id', aptId)
-    if (error) { setError(error.message); return }
-    setDeleteConfirm(null)
-    if (id === aptId) navigate('/')
-    setApartments(prev => prev.filter(a => a.id !== aptId))
+    const success = await deleteApartment(aptId)
+    if (success) {
+      setDeleteConfirm(null)
+      if (id === aptId) navigate('/')
+    }
   }
 
   if (loading) return (
@@ -106,7 +89,6 @@ export default function MyApartments() {
         </div>
       ) : (
         <>
-          {/* Delete confirmation banner */}
           {deleteConfirm && (
             <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl flex items-center justify-between">
               <span>¿Confirmar eliminación? Haz clic en Eliminar de nuevo.</span>

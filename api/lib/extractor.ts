@@ -33,10 +33,33 @@ Esquema exacto a devolver:
   "admin": "cuota de administración mensual en COP si se menciona (number | null)",
   "notes": "información adicional relevante no capturada en otros campos (string | null)"
 }`
-  "rent": "canon de arriendo mensual en COP si se menciona (number | null)",
-  "admin": "cuota de administración mensual en COP si se menciona (number | null)",
-  "notes": "información adicional relevante no capturada en otros campos (string | null)"
-}`
+
+export interface ExtractInput {
+  text?: string
+  imageBase64?: string
+  mediaType?: string
+}
+
+export interface ExtractedApartment {
+  name: string | null
+  neighborhood: string | null
+  address: string | null
+  estrato: number | null
+  floor: number | null
+  type: string | null
+  area: number | null
+  bedrooms: number | null
+  bathrooms: number | null
+  age: number | null
+  parking: number | null
+  view: string | null
+  sun_exposure: string | null
+  amenities: string[]
+  price: number | null
+  rent: number | null
+  admin: number | null
+  notes: string | null
+}
 
 /**
  * Core extraction logic — swappable.
@@ -48,18 +71,17 @@ Esquema exacto a devolver:
  *   - Cross-check yield against market averages
  *   - Flag suspicious asking prices
  *
- * The handler (extract-apartment.js) and the frontend never need to change.
+ * The handler (extract-apartment.ts) and the frontend never need to change.
  */
-export async function extractApartmentData({ text, imageBase64, mediaType }) {
-  // Build message content — supports text, image, or both
-  const content = []
+export async function extractApartmentData({ text, imageBase64, mediaType }: ExtractInput): Promise<ExtractedApartment> {
+  const content: Anthropic.MessageParam['content'] = []
 
   if (imageBase64 && mediaType) {
     content.push({
       type: 'image',
       source: {
         type: 'base64',
-        media_type: mediaType,
+        media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
         data: imageBase64,
       },
     })
@@ -82,5 +104,5 @@ export async function extractApartmentData({ text, imageBase64, mediaType }) {
   // Strip any accidental markdown fences
   const clean = raw.replace(/```json|```/g, '').trim()
 
-  return JSON.parse(clean)
+  return JSON.parse(clean) as ExtractedApartment
 }

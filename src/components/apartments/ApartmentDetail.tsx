@@ -1,12 +1,22 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { ApartmentRow } from '../../types'
 import {
   formatCOP, formatPct, formatCompact,
-  computeIndicators, calcAvaluo, calcTitulos, calcEscrituracion, calcSeguros, calcDownAmount, calcLoan, calcQuota,
+  calcAvaluo, calcTitulos, calcEscrituracion, calcDownAmount, calcLoan, calcQuota,
 } from '../../lib/calculations'
+import { useComputedIndicators } from '../../hooks/useComputedIndicators'
 import YieldBadge from '../ui/YieldBadge'
 
-function Row({ label, value, bold, green, red }) {
+interface RowProps {
+  label: string
+  value: string
+  bold?: boolean
+  green?: boolean
+  red?: boolean
+}
+
+function Row({ label, value, bold, green, red }: RowProps) {
   return (
     <div className="flex justify-between items-center py-2.5 border-b border-slate-100 last:border-0">
       <span className="text-sm text-slate-500">{label}</span>
@@ -17,7 +27,12 @@ function Row({ label, value, bold, green, red }) {
   )
 }
 
-function Section({ title, children }) {
+interface SectionProps {
+  title: string
+  children: React.ReactNode
+}
+
+function Section({ title, children }: SectionProps) {
   return (
     <div className="p-5">
       <p className="text-xs font-bold uppercase text-slate-400 tracking-wide mb-2">{title}</p>
@@ -26,10 +41,15 @@ function Section({ title, children }) {
   )
 }
 
-export default function ApartmentDetail({ apt, onDelete }) {
+interface Props {
+  apt: ApartmentRow
+  onDelete: (id: string) => void
+}
+
+export default function ApartmentDetail({ apt, onDelete }: Props) {
   const navigate = useNavigate()
-  const [mode, setMode] = useState('min')
-  const ind = computeIndicators(apt)
+  const [mode, setMode] = useState<'min' | 'full'>('min')
+  const ind = useComputedIndicators(apt)
   const { grossYield, netYield, netCashFlow, pricePerM2, downAmount, loan, efectivoRequerido, totalInversion, capRate, totalCosts, projected, seguros } = ind
 
   const price = Number(apt.price) || 0
@@ -40,7 +60,6 @@ export default function ApartmentDetail({ apt, onDelete }) {
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div>
           <h2 className="text-xl font-bold text-slate-900">{apt.name || 'Sin nombre'}</h2>
@@ -53,9 +72,8 @@ export default function ApartmentDetail({ apt, onDelete }) {
         <YieldBadge grossYield={grossYield} />
       </div>
 
-      {/* Toggle */}
       <div className="flex rounded-xl bg-slate-100 p-1 mb-5 w-fit">
-        {[['min', 'Resumen'], ['full', 'Info completa']].map(([val, label]) => (
+        {([['min', 'Resumen'], ['full', 'Info completa']] as const).map(([val, label]) => (
           <button
             key={val}
             onClick={() => setMode(val)}
@@ -69,7 +87,6 @@ export default function ApartmentDetail({ apt, onDelete }) {
       </div>
 
       <div className="bg-white rounded-2xl border-2 border-slate-200 divide-y divide-slate-100 overflow-hidden">
-        {/* Financiero básico */}
         <Section title="Financiero">
           <Row label="Precio comercial" value={formatCOP(apt.price)} bold />
           <Row label="Cuota inicial" value={`${apt.down_pct || 20}% = ${formatCOP(downAmount)}`} />
@@ -82,7 +99,6 @@ export default function ApartmentDetail({ apt, onDelete }) {
           <Row label="Precio por m²" value={formatCOP(pricePerM2)} />
         </Section>
 
-        {/* Proyección */}
         <Section title={`Proyección año ${apt.anio_proyectado || 3} (IPC ${apt.ipc || 6}%)`}>
           <Row label="Arriendo proyectado" value={formatCOP(projected.rentProy)} />
           <Row label="Costos proyectados" value={formatCOP(projected.totalCostsProy)} />
@@ -90,7 +106,6 @@ export default function ApartmentDetail({ apt, onDelete }) {
           <Row label="Rent. neta proyectada" value={formatPct(projected.netYieldProy)} bold />
         </Section>
 
-        {/* Full info */}
         {mode === 'full' && (
           <>
             <Section title="Inversión inicial">
@@ -116,11 +131,11 @@ export default function ApartmentDetail({ apt, onDelete }) {
             <Section title="Características">
               <Row label="Tipo" value={apt.type || '—'} />
               <Row label="Área" value={apt.area ? `${apt.area} m²` : '—'} />
-              <Row label="Estrato" value={apt.estrato || '—'} />
-              <Row label="Piso" value={apt.floor || '—'} />
-              <Row label="Habitaciones" value={apt.bedrooms ?? '—'} />
-              <Row label="Baños" value={apt.bathrooms ?? '—'} />
-              <Row label="Parqueaderos" value={apt.parking ?? '—'} />
+              <Row label="Estrato" value={String(apt.estrato || '—')} />
+              <Row label="Piso" value={String(apt.floor || '—')} />
+              <Row label="Habitaciones" value={apt.bedrooms != null ? String(apt.bedrooms) : '—'} />
+              <Row label="Baños" value={apt.bathrooms != null ? String(apt.bathrooms) : '—'} />
+              <Row label="Parqueaderos" value={apt.parking != null ? String(apt.parking) : '—'} />
               <Row label="Antigüedad" value={apt.age ? `${apt.age} años` : '—'} />
               <Row label="Vista" value={apt.view || '—'} />
               <Row label="Exposición solar" value={apt.sun_exposure || '—'} />
@@ -168,7 +183,6 @@ export default function ApartmentDetail({ apt, onDelete }) {
         )}
       </div>
 
-      {/* Actions */}
       <div className="flex gap-3 mt-5">
         <button
           onClick={() => navigate(`/edit/${apt.id}`)}

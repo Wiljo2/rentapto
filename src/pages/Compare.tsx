@@ -1,12 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { useApartments } from '../hooks/useApartments'
 import {
   formatCOP, formatCompact, formatPct,
   computeIndicators, calcDownAmount,
 } from '../lib/calculations'
 
-function Badge({ children, className }) {
+interface BadgeProps {
+  children: React.ReactNode
+  className: string
+}
+
+function Badge({ children, className }: BadgeProps) {
   return (
     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold border ${className}`}>
       {children}
@@ -14,21 +19,36 @@ function Badge({ children, className }) {
   )
 }
 
+interface MetricRowProps {
+  label: string
+  value: string
+  bold?: boolean
+  highlight?: boolean
+  green?: boolean
+  red?: boolean
+}
+
+function MetricRow({ label, value, bold, highlight, green, red }: MetricRowProps) {
+  return (
+    <div className="flex justify-between items-center text-xs">
+      <span className="text-slate-500">{label}</span>
+      <span className={`font-medium ${
+        highlight ? 'text-green-700 font-bold'
+        : green ? 'text-green-600'
+        : red ? 'text-red-600'
+        : bold ? 'text-slate-900 font-semibold'
+        : 'text-slate-700'
+      }`}>
+        {value}
+      </span>
+    </div>
+  )
+}
+
 export default function Compare() {
   const navigate = useNavigate()
-  const [apartments, setApartments] = useState([])
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    supabase
-      .from('apartments')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setApartments(data || [])
-        setLoading(false)
-      })
-  }, [])
+  const { apartments, loading } = useApartments()
 
   if (loading) return (
     <div className="flex justify-center items-center py-20 text-slate-400">Cargando...</div>
@@ -48,10 +68,12 @@ export default function Compare() {
     </div>
   )
 
-  // Compute indicators for all
-  const withInd = apartments.map(apt => ({ apt, ind: computeIndicators(apt) }))
+  // Memoize the entire withInd array to prevent recalculation on every render
+  const withInd = useMemo(
+    () => apartments.map(apt => ({ apt, ind: computeIndicators(apt) })),
+    [apartments]
+  )
 
-  // Find bests
   const maxGrossYield = Math.max(...withInd.map(({ ind }) => ind.grossYield))
   const minPrice = Math.min(...withInd.map(({ apt }) => Number(apt.price) || Infinity))
   const maxNetCashFlow = Math.max(...withInd.map(({ ind }) => ind.netCashFlow))
@@ -83,12 +105,11 @@ export default function Compare() {
             return (
               <div
                 key={apt.id}
-                className={`flex-shrink-0 w-68 bg-white rounded-2xl border-2 p-5 transition-shadow hover:shadow-md ${
+                className={`flex-shrink-0 bg-white rounded-2xl border-2 p-5 transition-shadow hover:shadow-md ${
                   isBestYield ? 'border-green-500 shadow-green-100 shadow-md' : 'border-slate-200'
                 }`}
                 style={{ width: '268px' }}
               >
-                {/* Header */}
                 <div className="mb-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <h3 className="font-bold text-slate-900 text-sm leading-tight">{apt.name || 'Sin nombre'}</h3>
@@ -100,7 +121,6 @@ export default function Compare() {
                   </div>
                   <p className="text-xs text-slate-500">{apt.neighborhood || '—'}</p>
 
-                  {/* Badges */}
                   <div className="flex flex-wrap gap-1 mt-2">
                     <Badge className={badgeColor}>{ind.badge.label}</Badge>
                     {isLowestPrice && <Badge className="bg-blue-100 text-blue-800 border-blue-300">Menor precio</Badge>}
@@ -110,7 +130,6 @@ export default function Compare() {
                   </div>
                 </div>
 
-                {/* Metrics */}
                 <div className="space-y-2.5 mb-4">
                   <MetricRow label="Precio" value={formatCompact(apt.price)} bold />
                   <MetricRow label={`Cuota inicial (${downPctDisplay}%)`} value={formatCompact(downAmount)} />
@@ -129,7 +148,6 @@ export default function Compare() {
                   </div>
                 </div>
 
-                {/* Yield bar */}
                 <div className="mb-4">
                   <div className="flex justify-between text-xs text-slate-400 mb-1">
                     <span>Rentabilidad relativa</span>
@@ -147,7 +165,6 @@ export default function Compare() {
                   </div>
                 </div>
 
-                {/* CTA */}
                 <button
                   onClick={() => navigate(`/apartment/${apt.id}`)}
                   className="w-full py-2 text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
@@ -159,23 +176,6 @@ export default function Compare() {
           })}
         </div>
       </div>
-    </div>
-  )
-}
-
-function MetricRow({ label, value, bold, highlight, green, red }) {
-  return (
-    <div className="flex justify-between items-center text-xs">
-      <span className="text-slate-500">{label}</span>
-      <span className={`font-medium ${
-        highlight ? 'text-green-700 font-bold'
-        : green ? 'text-green-600'
-        : red ? 'text-red-600'
-        : bold ? 'text-slate-900 font-semibold'
-        : 'text-slate-700'
-      }`}>
-        {value}
-      </span>
     </div>
   )
 }

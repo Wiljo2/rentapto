@@ -1,14 +1,22 @@
-import {
-  computeIndicators, formatCOP, formatCompact, formatPct,
-} from '../../lib/calculations'
+import type { ApartmentFormData } from '../../types'
+import { formatCOP, formatCompact, formatPct } from '../../lib/calculations'
+import { useComputedIndicators } from '../../hooks/useComputedIndicators'
 
-const badgeColors = {
+const badgeColors: Record<string, string> = {
   green:  'bg-green-100 text-green-800 border-green-300',
   yellow: 'bg-yellow-100 text-yellow-800 border-yellow-300',
   red:    'bg-red-100 text-red-800 border-red-300',
 }
 
-function Stat({ label, value, sub, green, red }) {
+interface StatProps {
+  label: string
+  value: string
+  sub?: string
+  green?: boolean
+  red?: boolean
+}
+
+function Stat({ label, value, sub, green, red }: StatProps) {
   return (
     <div className="flex flex-col">
       <span className="text-xs text-slate-400 font-medium mb-0.5">{label}</span>
@@ -20,8 +28,12 @@ function Stat({ label, value, sub, green, red }) {
   )
 }
 
-export default function SummaryPanel({ data }) {
-  const ind = computeIndicators(data)
+interface Props {
+  data: ApartmentFormData
+}
+
+export default function SummaryPanel({ data }: Props) {
+  const ind = useComputedIndicators(data)
   const { grossYield, netYield, netCashFlow, efectivoRequerido, quota, badge } = ind
 
   if (!data.price) return null

@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+type AuthMode = 'login' | 'signup'
+
 export default function Auth() {
-  const [mode, setMode] = useState('login') // 'login' | 'signup'
+  const [mode, setMode] = useState<AuthMode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setSuccess(null)
@@ -25,7 +27,7 @@ export default function Auth() {
         setSuccess('Revisa tu correo para confirmar tu cuenta.')
       }
     } catch (err) {
-      setError(err.message)
+      setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
       setLoading(false)
     }
@@ -34,7 +36,6 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-green-600 text-white text-2xl mb-4">
             🏢
@@ -44,9 +45,8 @@ export default function Auth() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-          {/* Tab switcher */}
           <div className="flex rounded-lg bg-slate-100 p-1 mb-6">
-            {['login', 'signup'].map(m => (
+            {(['login', 'signup'] as AuthMode[]).map(m => (
               <button
                 key={m}
                 onClick={() => { setMode(m); setError(null); setSuccess(null) }}

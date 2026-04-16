@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
+import type { User } from '@supabase/supabase-js'
 import { useAuth } from './hooks/useAuth'
 import Auth from './pages/Auth'
 import MyApartments from './pages/MyApartments'
@@ -10,7 +11,13 @@ const NAV = [
   { to: '/compare', label: 'Comparar' },
 ]
 
-function Layout({ children, onSignOut, userEmail }) {
+interface LayoutProps {
+  children: React.ReactNode
+  onSignOut: () => void
+  userEmail?: string
+}
+
+function Layout({ children, onSignOut, userEmail }: LayoutProps) {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
@@ -55,7 +62,12 @@ function Layout({ children, onSignOut, userEmail }) {
   )
 }
 
-function ProtectedRoutes({ user, signOut }) {
+interface ProtectedRoutesProps {
+  user: User
+  signOut: () => void
+}
+
+function ProtectedRoutes({ user, signOut }: ProtectedRoutesProps) {
   return (
     <Layout onSignOut={signOut} userEmail={user.email}>
       <Routes>

@@ -1,6 +1,8 @@
+import type { ApartmentInput, ApartmentFormData, Indicators, Projected, YieldBadge } from '../types'
+
 // ── Formatting ─────────────────────────────────────────────────────────────
 
-export function formatCOP(value) {
+export function formatCOP(value: number | string | null | undefined): string {
   if (value === null || value === undefined || value === '' || isNaN(Number(value))) return '—'
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
@@ -10,7 +12,7 @@ export function formatCOP(value) {
   }).format(Number(value))
 }
 
-export function formatCompact(value) {
+export function formatCompact(value: number | string | null | undefined): string {
   const n = Number(value)
   if (!value || isNaN(n)) return '—'
   if (Math.abs(n) >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(2)}B`
@@ -18,7 +20,7 @@ export function formatCompact(value) {
   return formatCOP(n)
 }
 
-export function formatPct(value, decimals = 2) {
+export function formatPct(value: number | null | undefined, decimals = 2): string {
   if (value === null || value === undefined || isNaN(Number(value))) return '—'
   return `${Number(value).toFixed(decimals)}%`
 }
@@ -26,12 +28,16 @@ export function formatPct(value, decimals = 2) {
 // ── Mortgage ───────────────────────────────────────────────────────────────
 
 // rm = (1 + TEA)^(1/12) - 1
-export function calcMonthlyRate(annualRatePct) {
+export function calcMonthlyRate(annualRatePct: number): number {
   return Math.pow(1 + annualRatePct / 100, 1 / 12) - 1
 }
 
 // cuota = loan × (rm × (1+rm)^n) / ((1+rm)^n - 1)
-export function calcQuota(loan, annualRatePct, termMonths) {
+export function calcQuota(
+  loan: number | string | null | undefined,
+  annualRatePct: number | string | null | undefined,
+  termMonths: number | string | null | undefined,
+): number {
   const L = Number(loan)
   const n = Number(termMonths)
   if (!L || !annualRatePct || !n) return 0
@@ -43,36 +49,49 @@ export function calcQuota(loan, annualRatePct, termMonths) {
 
 // ── Down payment & loan ────────────────────────────────────────────────────
 
-export function calcDownAmount(price, downPct, downCustom) {
+export function calcDownAmount(
+  price: number | string | null | undefined,
+  downPct: number | string | null | undefined,
+  downCustom: number | string | null | undefined,
+): number {
   if (downCustom && Number(downCustom) > 0) return Number(downCustom)
   return Math.round(Number(price) * (Number(downPct) / 100))
 }
 
-export function calcLoan(price, downAmount) {
-  return Math.max(0, Number(price) - Number(downAmount))
+export function calcLoan(
+  price: number | string | null | undefined,
+  downAmount: number,
+): number {
+  return Math.max(0, Number(price) - downAmount)
 }
 
 // ── Purchase costs — all auto from price, all overrideable ─────────────────
 
-export function calcAvaluo(price) {
+export function calcAvaluo(price: number | string | null | undefined): number {
   return Math.round(Number(price) * 0.00013)
 }
 
-export function calcTitulos(price) {
+export function calcTitulos(price: number | string | null | undefined): number {
   return Math.round(Number(price) * 0.00013)
 }
 
-export function calcEscrituracion(price, pct = 2.5) {
+export function calcEscrituracion(
+  price: number | string | null | undefined,
+  pct: number | string = 2.5,
+): number {
   return Math.round(Number(price) * (Number(pct) / 100))
 }
 
 // Seguros = loan × seguro_pct% monthly
-export function calcSeguros(loan, seguroPct = 0.05) {
-  return Math.round(Number(loan) * (Number(seguroPct) / 100))
+export function calcSeguros(
+  loan: number,
+  seguroPct: number | string = 0.05,
+): number {
+  return Math.round(loan * (Number(seguroPct) / 100))
 }
 
 // Total cash required upfront (cuota inicial + all purchase costs)
-export function calcEfectivoRequerido(apt) {
+export function calcEfectivoRequerido(apt: ApartmentInput): number {
   const price = Number(apt.price) || 0
   const downAmount = calcDownAmount(price, apt.down_pct, apt.down_custom)
   const avaluo = Number(apt.gasto_avaluo) || calcAvaluo(price)
@@ -83,7 +102,7 @@ export function calcEfectivoRequerido(apt) {
 }
 
 // Total investment = price + all purchase costs (for cap rate)
-export function calcTotalInversion(apt) {
+export function calcTotalInversion(apt: ApartmentInput): number {
   const price = Number(apt.price) || 0
   const avaluo = Number(apt.gasto_avaluo) || calcAvaluo(price)
   const titulos = Number(apt.gasto_titulos) || calcTitulos(price)
@@ -94,7 +113,7 @@ export function calcTotalInversion(apt) {
 
 // ── Monthly costs ──────────────────────────────────────────────────────────
 
-export function calcTotalCosts(apt) {
+export function calcTotalCosts(apt: ApartmentInput & { quota?: number | string | null }): number {
   const price = Number(apt.price) || 0
   const downAmount = calcDownAmount(price, apt.down_pct, apt.down_custom)
   const loan = calcLoan(price, downAmount)
@@ -108,41 +127,56 @@ export function calcTotalCosts(apt) {
 
 // ── Yield indicators ───────────────────────────────────────────────────────
 
-export function calcGrossYield(rent, price) {
+export function calcGrossYield(
+  rent: number | string | null | undefined,
+  price: number | string | null | undefined,
+): number {
   if (!rent || !price) return 0
   return (Number(rent) * 12) / Number(price) * 100
 }
 
-export function calcNetYield(rent, totalCosts, price) {
+export function calcNetYield(
+  rent: number | string | null | undefined,
+  totalCosts: number,
+  price: number | string | null | undefined,
+): number {
   if (!price) return 0
   return ((Number(rent) - totalCosts) * 12) / Number(price) * 100
 }
 
-export function calcNetCashFlow(rent, totalCosts) {
+export function calcNetCashFlow(
+  rent: number | string | null | undefined,
+  totalCosts: number,
+): number {
   return Number(rent) - totalCosts
 }
 
-export function calcPricePerM2(price, area) {
+export function calcPricePerM2(
+  price: number | string | null | undefined,
+  area: number | string | null | undefined,
+): number {
   if (!area || !price) return 0
   return Math.round(Number(price) / Number(area))
 }
 
-export function calcCapRate(rent, totalInversion) {
+export function calcCapRate(
+  rent: number | string | null | undefined,
+  totalInversion: number,
+): number {
   if (!totalInversion) return 0
   return (Number(rent) * 12) / totalInversion * 100
 }
 
 // ── Projected indicators ───────────────────────────────────────────────────
 
-export function calcProjected(apt, year) {
+export function calcProjected(apt: ApartmentInput, year: number): Projected {
   const ipc = (Number(apt.ipc) || 6) / 100
   const rent = Number(apt.rent) || 0
   const price = Number(apt.price) || 0
   const quota = Number(apt.quota) || 0 // quota stays fixed
 
-  const price0 = price
-  const downAmount = calcDownAmount(price0, apt.down_pct, apt.down_custom)
-  const loan = calcLoan(price0, downAmount)
+  const downAmount = calcDownAmount(price, apt.down_pct, apt.down_custom)
+  const loan = calcLoan(price, downAmount)
 
   const rentProy = rent * Math.pow(1 + ipc, year)
   const segurosProy = calcSeguros(loan, apt.seguro_pct) * Math.pow(1 + ipc, year)
@@ -161,7 +195,7 @@ export function calcProjected(apt, year) {
 
 // ── Badge ──────────────────────────────────────────────────────────────────
 
-export function getYieldBadge(grossYield) {
+export function getYieldBadge(grossYield: number): YieldBadge {
   if (grossYield >= 7) return { label: 'Buena inversión', color: 'green' }
   if (grossYield >= 5) return { label: 'Moderada', color: 'yellow' }
   return { label: 'Revisar números', color: 'red' }
@@ -169,7 +203,7 @@ export function getYieldBadge(grossYield) {
 
 // ── Master compute ─────────────────────────────────────────────────────────
 
-export function computeIndicators(apt) {
+export function computeIndicators(apt: ApartmentInput): Indicators {
   const price = Number(apt.price) || 0
   const rent = Number(apt.rent) || 0
   const area = Number(apt.area) || 0
@@ -179,7 +213,7 @@ export function computeIndicators(apt) {
   const quota = calcQuota(loan, apt.rate, apt.term)
   const efectivoRequerido = calcEfectivoRequerido(apt)
   const totalInversion = calcTotalInversion(apt)
-  const totalCosts = calcTotalCosts({ ...apt, quota: apt.quota || quota })
+  const totalCosts = calcTotalCosts({ ...apt, quota: apt.quota || quota } as ApartmentFormData)
   const grossYield = calcGrossYield(rent, price)
   const netYield = calcNetYield(rent, totalCosts, price)
   const netCashFlow = calcNetCashFlow(rent, totalCosts)
@@ -187,7 +221,7 @@ export function computeIndicators(apt) {
   const capRate = calcCapRate(rent, totalInversion)
   const badge = getYieldBadge(grossYield)
   const year = Number(apt.anio_proyectado) || 3
-  const projected = calcProjected({ ...apt, quota: apt.quota || quota }, year)
+  const projected = calcProjected({ ...apt, quota: apt.quota || quota } as ApartmentFormData, year)
   const seguros = calcSeguros(loan, apt.seguro_pct)
 
   return {

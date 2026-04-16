@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import type { User } from '@supabase/supabase-js'
+import { supabase } from '../../../lib/supabase'
 
-export function useAuth() {
-  const [user, setUser] = useState(null)
+export function useAuth(): {
+  user: User | null
+  loading: boolean
+  signOut: () => Promise<void>
+} {
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -18,7 +23,7 @@ export function useAuth() {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signOut = () => supabase.auth.signOut()
+  const signOut = () => supabase.auth.signOut().then(() => undefined)
 
   return { user, loading, signOut }
 }
