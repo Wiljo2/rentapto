@@ -1,4 +1,4 @@
-import type { ApartmentInput, ApartmentFormData, Indicators, Projected, YieldBadge } from '../types'
+import type { ApartmentInput, ApartmentFormData, Indicators, Projected, YieldBadge, YearlyProjection, TotalReturn, Veredicto } from '../types'
 
 // ── Formatting ─────────────────────────────────────────────────────────────
 
@@ -193,6 +193,132 @@ export function calcProjected(apt: ApartmentInput, year: number): Projected {
   }
 }
 
+// ── Adjusted cash flow (with vacancy and maintenance) ──────────────────────
+
+export function calcNetCashFlowAdjusted(
+  rent: number | string | null | undefined,
+  totalCosts: number,
+  vacancia: number,
+  mantenimiento: number | string | null | undefined,
+): number {
+  const r = Number(rent) || 0
+  const vacanciaMonthly = (r * Number(vacancia)) / 12
+  const mantenimientoMonthly = (Number(mantenimiento) || 0) / 12
+  return r - totalCosts - vacanciaMonthly - mantenimientoMonthly
+}
+
+// ── Yearly projections ─────────────────────────────────────────────────────
+
+export function calcYearlyProjections(apt: ApartmentInput, horizonte: number): YearlyProjection[] {
+  const price = Number(apt.price) || 0
+  const rent = Number(apt.rent) || 0
+  const ipc = (Number(apt.ipc) || 6) / 100
+  const valorizacion = (Number(apt.valorizacion_anual) || 7) / 100
+  const vacancia = Number(apt.vacancia_meses) || 1
+  const mantenimiento = Number(apt.mantenimiento_anual) || 0
+  const quota = Number(apt.quota) || 0
+
+  const downAmount = calcDownAmount(price, apt.down_pct, apt.down_custom)
+  const loan = calcLoan(price, downAmount)
+
+  const projections: YearlyProjection[] = []
+  let cumulativeCashFlow = 0
+
+  for (let year = 1; year <= horizonte; year++) {
+    const propertyValue = price * Math.pow(1 + valorizacion, year)
+    const yearlyRent = rent * Math.pow(1 + ipc, year) * 12
+
+    // Costs that grow with IPC
+    const seguros = calcSeguros(loan, apt.seguro_pct) * Math.pow(1 + ipc, year) * 12
+    const admin = (Number(apt.admin) || 0) * Math.pow(1 + ipc, year) * 12
+    const tax = (Number(apt.tax) || 0) * Math.pow(1 + ipc, year) * 12
+    const other = (Number(apt.other_costs) || 0) * Math.pow(1 + ipc, year) * 12
+
+    // Fixed costs
+    const quotaYearly = quota * 12
+
+    // Vacancy and maintenance (grow with IPC)
+    const vacanciaAmount = (rent * Math.pow(1 + ipc, year) * vacancia)
+    const mantenimientoAmount = mantenimiento * Math.pow(1 + ipc, year)
+
+    const yearlyCosts = quotaYearly + seguros + admin + tax + other + vacanciaAmount + mantenimientoAmount
+    const netCashFlow = yearlyRent - yearlyCosts
+    cumulativeCashFlow += netCashFlow
+
+    projections.push({
+      year,
+      propertyValue: Math.round(propertyValue),
+      cumulativeCashFlow: Math.round(cumulativeCashFlow),
+      yearlyRent: Math.round(yearlyRent),
+      yearlyCosts: Math.round(yearlyCosts),
+      netCashFlow: Math.round(netCashFlow),
+    })
+  }
+
+  return projections
+}
+
+// ── Total return & verdict ─────────────────────────────────────────────────
+
+export function calcTotalReturn(apt: ApartmentInput, projections: YearlyProjection[]): TotalReturn {
+  const price = Number(apt.price) || 0
+  const capitalPropio = calcEfectivoRequerido(apt)
+  const horizonte = projections.length
+
+  if (horizonte === 0 || !capitalPropio) {
+    return {
+      capitalPropio,
+      plusvaliaTotal: 0,
+      flujoTotalHorizonte: 0,
+      retornoTotalAnualizado: 0,
+      veredicto: getVeredicto(0),
+    }
+  }
+
+  const lastProjection = projections[projections.length - 1]
+  const plusvaliaTotal = lastProjection.propertyValue - price
+  const flujoTotalHorizonte = lastProjection.cumulativeCashFlow
+  const retornoTotal = ((plusvaliaTotal + flujoTotalHorizonte) / capitalPropio) * 100
+  const retornoTotalAnualizado = retornoTotal / horizonte
+
+  return {
+    capitalPropio,
+    plusvaliaTotal: Math.round(plusvaliaTotal),
+    flujoTotalHorizonte: Math.round(flujoTotalHorizonte),
+    retornoTotalAnualizado,
+    veredicto: getVeredicto(retornoTotalAnualizado),
+  }
+}
+
+export function getVeredicto(retornoAnualizado: number): Veredicto {
+  if (retornoAnualizado >= 12) {
+    return {
+      label: 'Excelente inversión',
+      color: 'emerald',
+      description: 'Retorno superior al 12% anual',
+    }
+  }
+  if (retornoAnualizado >= 8) {
+    return {
+      label: 'Buena inversión',
+      color: 'green',
+      description: 'Retorno entre 8% y 12% anual',
+    }
+  }
+  if (retornoAnualizado >= 5) {
+    return {
+      label: 'Aceptable con condiciones',
+      color: 'yellow',
+      description: 'Retorno entre 5% y 8% anual',
+    }
+  }
+  return {
+    label: 'Poco rentable',
+    color: 'red',
+    description: 'Retorno inferior al 5% anual',
+  }
+}
+
 // ── Badge ──────────────────────────────────────────────────────────────────
 
 export function getYieldBadge(grossYield: number): YieldBadge {
@@ -230,6 +356,16 @@ export function computeIndicators(apt: ApartmentInput): Indicators {
   const projected = calcProjected({ ...apt, quota: apt.quota || quota } as ApartmentFormData, year)
   const seguros = calcSeguros(loan, apt.seguro_pct)
 
+  // New calculations
+  const vacancia = Number(apt.vacancia_meses) || 1
+  const mantenimiento = Number(apt.mantenimiento_anual) || 0
+  const netCashFlowAdjusted = calcNetCashFlowAdjusted(rent, totalCosts, vacancia, mantenimiento)
+  const netYieldOnEquity = efectivoRequerido ? (netCashFlowAdjusted * 12 / efectivoRequerido * 100) : 0
+
+  const horizonte = Number(apt.horizonte_anos) || 10
+  const yearlyProjections = calcYearlyProjections({ ...apt, quota: apt.quota || quota } as ApartmentFormData, horizonte)
+  const totalReturn = calcTotalReturn(apt, yearlyProjections)
+
   return {
     downAmount,
     loan,
@@ -248,5 +384,9 @@ export function computeIndicators(apt: ApartmentInput): Indicators {
     capRate,
     badge,
     projected,
+    netCashFlowAdjusted,
+    netYieldOnEquity,
+    yearlyProjections,
+    totalReturn,
   }
 }

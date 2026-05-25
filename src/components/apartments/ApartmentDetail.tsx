@@ -4,6 +4,8 @@ import type { ApartmentRow } from '../../types'
 import { formatCOP, formatPct, formatCompact } from '../../lib/calculations'
 import { useComputedIndicators } from '../../hooks/useComputedIndicators'
 import YieldBadge from '../ui/YieldBadge'
+import ProjectionCharts from './ProjectionCharts'
+import PrepaymentCalculator from './PrepaymentCalculator'
 
 interface RowProps {
   label: string
@@ -45,12 +47,13 @@ interface Props {
 
 export default function ApartmentDetail({ apt, onDelete }: Props) {
   const navigate = useNavigate()
-  const [mode, setMode] = useState<'min' | 'full'>('min')
+  const [mode, setMode] = useState<'min' | 'full' | 'projection' | 'prepayment'>('min')
   const ind = useComputedIndicators(apt)
   const {
     grossYield, netYield, netCashFlow, pricePerM2, downAmount, loan,
     efectivoRequerido, totalInversion, capRate, totalCosts, projected, seguros,
-    quota, avaluo, titulos, escrituracion
+    quota, avaluo, titulos, escrituracion, netCashFlowAdjusted, netYieldOnEquity,
+    yearlyProjections, totalReturn
   } = ind
 
   return (
@@ -67,12 +70,17 @@ export default function ApartmentDetail({ apt, onDelete }: Props) {
         <YieldBadge grossYield={grossYield} />
       </div>
 
-      <div className="flex rounded-xl bg-slate-100 p-1 mb-5 w-fit">
-        {([['min', 'Resumen'], ['full', 'Info completa']] as const).map(([val, label]) => (
+      <div className="flex rounded-xl bg-slate-100 p-1 mb-5 w-full overflow-x-auto">
+        {([
+          ['min', 'Resumen'],
+          ['full', 'Info completa'],
+          ['projection', 'Proyección'],
+          ['prepayment', 'Abonos'],
+        ] as const).map(([val, label]) => (
           <button
             key={val}
             onClick={() => setMode(val)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
               mode === val ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -81,7 +89,24 @@ export default function ApartmentDetail({ apt, onDelete }: Props) {
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl border-2 border-slate-200 divide-y divide-slate-100 overflow-hidden">
+      {/* Projection mode */}
+      {mode === 'projection' && (
+        <ProjectionCharts projections={yearlyProjections} totalReturn={totalReturn} />
+      )}
+
+      {/* Prepayment calculator mode */}
+      {mode === 'prepayment' && loan > 0 && (
+        <PrepaymentCalculator
+          loan={loan}
+          annualRate={Number(apt.rate) || 13.5}
+          termMonths={Number(apt.term) || 240}
+          quota={quota}
+        />
+      )}
+
+      {/* Summary and full info modes */}
+      {(mode === 'min' || mode === 'full') && (
+        <div className="bg-white rounded-2xl border-2 border-slate-200 divide-y divide-slate-100 overflow-hidden">
         <Section title="Financiero">
           <Row label="Precio comercial" value={formatCOP(apt.price)} bold />
           <Row label="Cuota inicial" value={`${apt.down_pct || 20}% = ${formatCOP(downAmount)}`} />
@@ -99,6 +124,13 @@ export default function ApartmentDetail({ apt, onDelete }: Props) {
           <Row label="Costos proyectados" value={formatCOP(projected.totalCostsProy)} />
           <Row label="Flujo neto proyectado" value={formatCOP(projected.cashFlowProy)} green={projected.cashFlowProy > 0} red={projected.cashFlowProy < 0} />
           <Row label="Rent. neta proyectada" value={formatPct(projected.netYieldProy)} bold />
+        </Section>
+
+        <Section title="Flujo ajustado (vacancia + mantenimiento)">
+          <Row label={`Vacancia (${apt.vacancia_meses || 1} meses/año)`} value={formatCOP((Number(apt.rent) * (Number(apt.vacancia_meses) || 1)) / 12)} red />
+          <Row label="Mantenimiento mensual" value={formatCOP((Number(apt.mantenimiento_anual) || 0) / 12)} red />
+          <Row label="Flujo neto ajustado" value={formatCOP(netCashFlowAdjusted)} bold green={netCashFlowAdjusted > 0} red={netCashFlowAdjusted < 0} />
+          <Row label="Rent. neta s/ capital propio" value={formatPct(netYieldOnEquity)} bold />
         </Section>
 
         {mode === 'full' && (
@@ -177,6 +209,7 @@ export default function ApartmentDetail({ apt, onDelete }: Props) {
           </>
         )}
       </div>
+      )}
 
       <div className="flex gap-3 mt-5">
         <button

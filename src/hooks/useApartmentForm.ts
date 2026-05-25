@@ -26,6 +26,10 @@ const DEFAULT: ApartmentFormData = {
   other_costs: '',
   ipc: 6,
   anio_proyectado: 3,
+  vacancia_meses: 1,
+  mantenimiento_anual: '',
+  valorizacion_anual: 7,
+  horizonte_anos: 10,
   // Step 4
   neighborhood: '',
   address: '',

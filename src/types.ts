@@ -27,6 +27,11 @@ export interface ApartmentFormData {
   other_costs: number | string
   ipc: number
   anio_proyectado: number
+  // Step 3 — projection parameters
+  vacancia_meses: number
+  mantenimiento_anual: number | string
+  valorizacion_anual: number
+  horizonte_anos: number
   // Step 4 — details
   neighborhood: string
   address: string
@@ -92,6 +97,29 @@ export interface Projected {
   cashFlowProy: number
 }
 
+export interface YearlyProjection {
+  year: number
+  propertyValue: number
+  cumulativeCashFlow: number
+  yearlyRent: number
+  yearlyCosts: number
+  netCashFlow: number
+}
+
+export interface TotalReturn {
+  capitalPropio: number
+  plusvaliaTotal: number
+  flujoTotalHorizonte: number
+  retornoTotalAnualizado: number
+  veredicto: Veredicto
+}
+
+export interface Veredicto {
+  label: string
+  color: 'emerald' | 'green' | 'yellow' | 'red'
+  description: string
+}
+
 export interface YieldBadge {
   label: string
   color: 'green' | 'yellow' | 'red'
@@ -115,6 +143,11 @@ export interface Indicators {
   capRate: number
   badge: YieldBadge
   projected: Projected
+  // New indicators
+  netCashFlowAdjusted: number
+  netYieldOnEquity: number
+  yearlyProjections: YearlyProjection[]
+  totalReturn: TotalReturn
 }
 
 // Convenience union for functions that accept either form data or a saved row

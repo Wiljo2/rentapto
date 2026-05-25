@@ -136,6 +136,61 @@ export default function Step3Gastos({ data, onChange }: Props) {
           </div>
         </div>
       </div>
+
+      <div className="border-2 border-slate-200 rounded-2xl p-5">
+        <p className="text-sm font-semibold text-slate-700 mb-2">Parámetros de proyección completa</p>
+        <p className="text-xs text-slate-500 mb-4">
+          Estos parámetros se usan para calcular el retorno total anualizado y las proyecciones de largo plazo
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">
+              Vacancia (meses/año)
+            </label>
+            <input
+              type="number"
+              value={data.vacancia_meses}
+              onChange={e => onChange('vacancia_meses', e.target.value)}
+              min={0} max={12} step={1}
+              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            />
+            <p className="text-xs text-slate-400 mt-1">Meses estimados sin arrendar</p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">
+              Mantenimiento anual
+            </label>
+            <MoneyInput value={data.mantenimiento_anual} onChange={v => onChange('mantenimiento_anual', v)} />
+            <p className="text-xs text-slate-400 mt-1">Reparaciones y mejoras por año</p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">
+              Valorización anual (%)
+            </label>
+            <input
+              type="number"
+              value={data.valorizacion_anual}
+              onChange={e => onChange('valorizacion_anual', e.target.value)}
+              step="0.1"
+              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            />
+            <p className="text-xs text-slate-400 mt-1">Apreciación estimada del inmueble</p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">
+              Horizonte de inversión (años)
+            </label>
+            <input
+              type="number"
+              value={data.horizonte_anos}
+              onChange={e => onChange('horizonte_anos', e.target.value)}
+              min={1} max={30} step={1}
+              className="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            />
+            <p className="text-xs text-slate-400 mt-1">Periodo de análisis de la inversión</p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

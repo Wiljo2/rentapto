@@ -31,5 +31,9 @@ export function useComputedIndicators(apt: ApartmentInput): Indicators {
     apt.ipc,
     apt.anio_proyectado,
     apt.area,
+    apt.vacancia_meses,
+    apt.mantenimiento_anual,
+    apt.valorizacion_anual,
+    apt.horizonte_anos,
   ])
 }
