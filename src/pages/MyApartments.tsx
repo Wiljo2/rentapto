@@ -50,7 +50,11 @@ export default function MyApartments() {
             </div>
           </div>
         )}
-        <ApartmentDetail apt={apt} onDelete={handleDelete} />
+        <ApartmentDetail
+          apt={apt}
+          onEdit={() => navigate(`/edit/${apt.id}`)}
+          onDelete={() => handleDelete(apt.id)}
+        />
       </div>
     )
   }

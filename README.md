@@ -167,3 +167,19 @@ schema.sql                 # Esquema de Supabase con RLS
 | >= 7% | Buena inversion (verde) |
 | 5% - 7% | Moderada (amarillo) |
 | < 5% | Revisar numeros (rojo) |
+
+---
+
+## Calculadora estática (GitHub Pages)
+
+Versión solo-calculadora: el mismo wizard de 4 pasos y el análisis (resumen, info completa, proyección, abonos), **sin login, sin Supabase y sin IA**. Los datos del cálculo actual se guardan solo en el `localStorage` del navegador.
+
+```powershell
+npm run dev:calc      # desarrollo local
+npm run build:calc    # genera dist-calculator/
+npm run preview:calc  # sirve la build localmente
+```
+
+**Despliegue:** el workflow `.github/workflows/deploy-calculator.yml` publica `dist-calculator/` en cada push a `main`. Para activarlo, en GitHub ve a **Settings → Pages → Build and deployment → Source** y elige **GitHub Actions**.
+
+> GitHub Pages en repositorios privados requiere un plan GitHub Pro/Team/Enterprise. Con plan gratuito, el repositorio debe ser público.

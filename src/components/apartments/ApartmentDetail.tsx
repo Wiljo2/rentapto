@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import type { ApartmentRow } from '../../types'
-import { formatCOP, formatPct, formatCompact } from '../../lib/calculations'
+import type { ApartmentInput } from '../../types'
+import { formatCOP, formatPct } from '../../lib/calculations'
 import { useComputedIndicators } from '../../hooks/useComputedIndicators'
 import YieldBadge from '../ui/YieldBadge'
 import ProjectionCharts from './ProjectionCharts'
@@ -40,13 +39,18 @@ function Section({ title, children }: SectionProps) {
   )
 }
 
-interface Props {
-  apt: ApartmentRow
-  onDelete: (id: string) => void
+// Saved rows use null for missing values; unsaved form data uses ''
+function orDash(value: unknown, suffix = ''): string {
+  return value != null && value !== '' ? `${value}${suffix}` : '—'
 }
 
-export default function ApartmentDetail({ apt, onDelete }: Props) {
-  const navigate = useNavigate()
+interface Props {
+  apt: ApartmentInput
+  onEdit: () => void
+  onDelete?: () => void
+}
+
+export default function ApartmentDetail({ apt, onEdit, onDelete }: Props) {
   const [mode, setMode] = useState<'min' | 'full' | 'projection' | 'prepayment'>('min')
   const ind = useComputedIndicators(apt)
   const {
@@ -160,9 +164,9 @@ export default function ApartmentDetail({ apt, onDelete }: Props) {
               <Row label="Área" value={apt.area ? `${apt.area} m²` : '—'} />
               <Row label="Estrato" value={String(apt.estrato || '—')} />
               <Row label="Piso" value={String(apt.floor || '—')} />
-              <Row label="Habitaciones" value={apt.bedrooms != null ? String(apt.bedrooms) : '—'} />
-              <Row label="Baños" value={apt.bathrooms != null ? String(apt.bathrooms) : '—'} />
-              <Row label="Parqueaderos" value={apt.parking != null ? String(apt.parking) : '—'} />
+              <Row label="Habitaciones" value={orDash(apt.bedrooms)} />
+              <Row label="Baños" value={orDash(apt.bathrooms)} />
+              <Row label="Parqueaderos" value={orDash(apt.parking)} />
               <Row label="Antigüedad" value={apt.age ? `${apt.age} años` : '—'} />
               <Row label="Vista" value={apt.view || '—'} />
               <Row label="Exposición solar" value={apt.sun_exposure || '—'} />
@@ -213,17 +217,19 @@ export default function ApartmentDetail({ apt, onDelete }: Props) {
 
       <div className="flex gap-3 mt-5">
         <button
-          onClick={() => navigate(`/edit/${apt.id}`)}
+          onClick={onEdit}
           className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-xl transition-colors"
         >
           Editar
         </button>
-        <button
-          onClick={() => onDelete(apt.id)}
-          className="px-5 py-3 text-sm font-medium text-red-600 border-2 border-red-200 hover:bg-red-50 rounded-xl transition-colors"
-        >
-          Eliminar
-        </button>
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            className="px-5 py-3 text-sm font-medium text-red-600 border-2 border-red-200 hover:bg-red-50 rounded-xl transition-colors"
+          >
+            Eliminar
+          </button>
+        )}
       </div>
     </div>
   )
